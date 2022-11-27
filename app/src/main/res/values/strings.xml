@@ -9,4 +9,8 @@
     <string name="notes">Notes</string>
     <string name="enter_notes">Enter notes</string>
     <string name="save">Save</string>
+    <string name="akrio.com">Akrio.com</string>
+    <string name="open_drawer">Open drawer</string>
+    <string name="close_drawer">Close drawer</string>
+    <string name="placebook">Placebook</string>
 </resources>
