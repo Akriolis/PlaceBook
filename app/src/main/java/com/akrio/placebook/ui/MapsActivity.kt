@@ -1,6 +1,7 @@
 package com.akrio.placebook.ui
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -31,9 +32,10 @@ import kotlinx.coroutines.launch
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private companion object {
+    companion object {
         private const val REQUEST_LOCATION = 1
         private const val TAG = "MapsActivity"
+        const val EXTRA_BOOKMARK_ID = "com.akrio.placebook.EXTRA_BOOKMARK_ID"
     }
 
     private lateinit var mMap: GoogleMap
@@ -153,6 +155,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .snippet(place.phoneNumber)
         )
         marker?.tag = PlaceInfo(place, photo)
+        marker?.showInfoWindow()
     }
 
     override fun onRequestPermissionsResult(
@@ -180,7 +183,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     ) == PackageManager.PERMISSION_GRANTED
 
     @SuppressLint("MissingPermission")
-
     private fun getCurrentLocation() {
         if (!isLocationPermissionGranted()) {
             requestLocationPermission()
@@ -200,13 +202,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun handleInfoWindowClick(marker: Marker) {
-        val placeInfo = (marker.tag as PlaceInfo)
-        if (placeInfo.place != null) {
-            GlobalScope.launch {
-                mapsViewModel.addBookmarkFromPlace(placeInfo.place, placeInfo.image)
+        when (marker.tag) {
+            is PlaceInfo -> {
+                val placeInfo = (marker.tag as PlaceInfo)
+                if (placeInfo.place != null && placeInfo.image != null) {
+                    GlobalScope.launch {
+                        mapsViewModel.addBookmarkFromPlace(placeInfo.place, placeInfo.image)
+                    }
+                }
+                marker.remove()
+            }
+            is MapsViewModel.BookmarkMarkerView -> {
+                val bookmarkMarkerView =
+                    (marker.tag as MapsViewModel.BookmarkMarkerView)
+                marker.hideInfoWindow()
+                bookmarkMarkerView.id?.let {
+                    startBookmarkDetails(it)
+                }
             }
         }
-        marker.remove()
     }
 
     private fun addPlaceMarker(
@@ -215,6 +229,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val marker = mMap.addMarker(
             MarkerOptions()
                 .position(bookmark.location)
+                .title(bookmark.name)
+                .snippet(bookmark.phone)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                 .alpha(0.8f)
         )
@@ -239,6 +255,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 displayAllBookmarks(it)
             }
         }
+    }
+
+    private fun startBookmarkDetails(bookmarkId: Long) {
+        val intent = Intent(this, BookmarkDetailsActivity::class.java)
+        intent.putExtra(EXTRA_BOOKMARK_ID, bookmarkId)
+        startActivity(intent)
     }
 
     class PlaceInfo(val place: Place? = null, val image: Bitmap? = null)

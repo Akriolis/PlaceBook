@@ -8,7 +8,7 @@ import com.akrio.placebook.viewmodel.MapsViewModel
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.Marker
 
-class BookmarkInfoWindowAdapter(context: Activity) : GoogleMap.InfoWindowAdapter {
+class BookmarkInfoWindowAdapter(val context: Activity) : GoogleMap.InfoWindowAdapter {
 
     private val binding = ContentBookmarkInfoBinding
         .inflate(context.layoutInflater)
@@ -29,6 +29,7 @@ class BookmarkInfoWindowAdapter(context: Activity) : GoogleMap.InfoWindowAdapter
             is MapsViewModel.BookmarkMarkerView -> {
                 val bookMarkView =
                     marker.tag as MapsViewModel.BookmarkMarkerView
+                binding.photo.setImageBitmap(bookMarkView.getImage(context))
 
             }
         }
