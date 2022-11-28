@@ -4,8 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
+import android.widget.ProgressBar
 import androidx.activity.viewModels
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -34,6 +37,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+
+    private var markers = HashMap<Long, Marker>()
 
     private lateinit var bookmarkListAdapter: BookmarkListAdapter
 
@@ -82,22 +87,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         getCurrentLocation()
     }
 
-    private fun setupToolbar(){
+    private fun setupToolbar() {
         setSupportActionBar(databinding.mainMapView.toolbar)
         val toggle = ActionBarDrawerToggle(
             this,
             databinding.drawerLayout,
             databinding.mainMapView.toolbar,
             R.string.open_drawer,
-            R.string.close_drawer)
+            R.string.close_drawer
+        )
 
         toggle.syncState()
     }
 
-    private fun setupNavigationDrawer(){
+    private fun setupNavigationDrawer() {
         val layoutManager = LinearLayoutManager(this)
         databinding.drawerViewMaps.bookmarkRecyclerView.layoutManager = layoutManager
-        bookmarkListAdapter = BookmarkListAdapter(null,this)
+        bookmarkListAdapter = BookmarkListAdapter(null, this)
         databinding.drawerViewMaps.bookmarkRecyclerView.adapter = bookmarkListAdapter
     }
 
@@ -123,6 +129,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun displayPoi(poi: PointOfInterest) {
+        showProgress()
         displayPoiGetPlaceStep(poi)
     }
 
@@ -147,6 +154,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val statusCode = it.statusCode
                 Log.e(TAG, "Place not found: ${it.message}, status code: $statusCode")
             }
+            hideProgress()
         }
     }
 
@@ -171,10 +179,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val statusCode = it.statusCode
                 Log.e(TAG, "Place not found: ${it.message}, status code: $statusCode")
             }
+            hideProgress()
         }
     }
 
     private fun displayPoiDisplayStep(place: Place, photo: Bitmap?) {
+        hideProgress()
         val marker = mMap.addMarker(
             MarkerOptions()
                 .position(place.latLng as LatLng)
@@ -263,7 +273,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         )
 
         marker?.tag = bookmark
-
+        bookmark.id?.let {
+            if (marker != null) {
+                markers[it] = marker
+            }
+        }
         return marker
     }
 
@@ -278,6 +292,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun createBookmarkObserver() {
         mapsViewModel.getBookmarkViews()?.observe(this) {
             mMap.clear()
+            markers.clear()
             it?.let {
                 displayAllBookmarks(it)
                 bookmarkListAdapter.setBookmarkData(it)
@@ -285,10 +300,48 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun updateMapLocation(location: Location) {
+        val latLng = LatLng(location.latitude, location.longitude)
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16.0f))
+    }
+
+    fun moveToBookmark(bookmark: MapsViewModel.BookmarkView) {
+        databinding.drawerLayout.closeDrawer(databinding.drawerViewMaps.drawerView)
+        val marker = markers[bookmark.id]
+        marker?.showInfoWindow()
+        val location = Location("")
+        location.apply {
+            latitude = bookmark.location.latitude
+            longitude = bookmark.location.longitude
+        }
+        updateMapLocation(location)
+    }
+
     private fun startBookmarkDetails(bookmarkId: Long) {
         val intent = Intent(this, BookmarkDetailsActivity::class.java)
         intent.putExtra(EXTRA_BOOKMARK_ID, bookmarkId)
         startActivity(intent)
+    }
+
+    private fun disableUserInteraction(){
+        window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+        WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
+    }
+
+    private fun enableUserInteraction(){
+        window.clearFlags(
+            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        )
+    }
+
+    private fun showProgress(){
+        databinding.mainMapView.progressBar.visibility = ProgressBar.VISIBLE
+        disableUserInteraction()
+    }
+
+    private fun hideProgress(){
+        databinding.mainMapView.progressBar.visibility = ProgressBar.GONE
+        enableUserInteraction()
     }
 
     class PlaceInfo(val place: Place? = null, val image: Bitmap? = null)

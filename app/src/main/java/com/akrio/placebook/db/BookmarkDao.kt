@@ -9,7 +9,7 @@ import com.akrio.placebook.model.Bookmark
 @Dao
 interface BookmarkDao {
 
-    @Query("SELECT * FROM bookmark_table")
+    @Query("SELECT * FROM bookmark_table ORDER BY name")
     fun loadAll(): LiveData<List<Bookmark>>
 
     @Query("SELECT * FROM bookmark_table WHERE id = :bookmarkId")

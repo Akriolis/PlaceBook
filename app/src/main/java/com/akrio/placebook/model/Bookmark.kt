@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.akrio.placebook.util.FileUtils
 import com.akrio.placebook.util.ImageUtils
 
 @Entity(tableName = "bookmark_table")
@@ -30,6 +31,12 @@ data class Bookmark(
     companion object {
         fun generateImageFilename(id: Long): String {
             return "bookmark$id.png"
+        }
+    }
+
+    fun deleteImage(context: Context) {
+        id?.let {
+            FileUtils.deleteFile(context, generateImageFilename(it))
         }
     }
 }

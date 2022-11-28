@@ -13,4 +13,8 @@
     <string name="open_drawer">Open drawer</string>
     <string name="close_drawer">Close drawer</string>
     <string name="placebook">Placebook</string>
+    <string name="delete">Delete?</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="mail_icon">Mail icon</string>
 </resources>

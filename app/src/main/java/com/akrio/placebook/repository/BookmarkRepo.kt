@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import com.akrio.placebook.db.PlaceBookDatabase
 import com.akrio.placebook.model.Bookmark
 
-class BookmarkRepo(context: Context) {
+class BookmarkRepo(val context: Context) {
     private val db = PlaceBookDatabase.getInstance(context)
     private val bookmarkDao = db.bookmarkDao
 
@@ -33,5 +33,10 @@ class BookmarkRepo(context: Context) {
 
     fun getBookmark(bookmarkId: Long): Bookmark{
         return bookmarkDao.loadBookmark(bookmarkId)
+    }
+
+    fun deleteBookmark(bookmark: Bookmark){
+        bookmark.deleteImage(context)
+        bookmarkDao.deleteBookmark(bookmark)
     }
 }
